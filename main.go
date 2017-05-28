@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -13,17 +12,53 @@ import (
 	"os"
 	"os/user"
 	"path"
-	"strings"
 	"time"
 
+	"github.com/docopt/docopt-go"
 	"github.com/mattn/go-isatty"
 	"github.com/mozillazg/gdauth"
 )
 
 const version = "0.1.0"
-const contentTypeJSON = "application/json; charset=utf-8"
+const defaultContentTypeJSON = "application/json; charset=utf-8"
 const userAgent = "gdhttp/" + version
-const configPath = ".gdhttp/config.json"
+const defaultConfigPath = ".gdhttp/config.json"
+const defaultTimeout = 30 * time.Second
+const usage = `gdhttp.
+
+Usage:
+    gdhttp URL
+    gdhttp [METHOD] URL
+    gdhttp [options] URL
+    gdhttp [options] [METHOD] URL
+    gdhttp -h | --help
+    gdhttp -V | --version
+
+Arguments:
+    METHOD                               HTTP method (default: GET).
+    URL                                  URL.
+
+options:
+    -h --help                            Show this screen.
+    -V, --version                        Show version info.
+    --accesskeyid=<accessKeyID>          Access key id.
+    --accesskeysecret=<accessKeySecret>  Access key secret.
+    -c, --config=<config>                Configuration file (default: ~/.gdhttp/config.json).
+    -t, --timeout=<timeout>              The connection timeout of the request in seconds (default: 30).
+    -b, --body                           Print only the response body.
+    -v, --verbose                        Verbose output. Print the whole request as well as the response.
+
+Sample configuration file:
+
+{
+    "auths": {
+        "localhost": {
+            "accessKeyID" : "id",
+            "accessKeySecret": "secret"
+        }
+    }
+}
+`
 
 // Client ...
 type Client struct {
@@ -39,8 +74,8 @@ type Hook interface {
 	after(resp *http.Response)
 }
 
-// HTTPDump config for dump http request and response
-type HTTPDump struct {
+// DumpConfig config for dump http request and response
+type DumpConfig struct {
 	verbose  bool
 	onlyBody bool
 }
@@ -77,7 +112,7 @@ func (c *Client) doRequest(method, uri string, params []byte, hook Hook) (resp *
 	if err != nil {
 		return
 	}
-	req.Header.Set("Content-Type", contentTypeJSON)
+	req.Header.Set("Content-Type", defaultContentTypeJSON)
 	req.Header.Set("User-Agent", userAgent)
 	sign := gdauth.Signature{
 		Method:          gdauth.HMACSHA1V1,
@@ -127,43 +162,25 @@ type Args struct {
 	params          []byte
 }
 
-func parseArgs() (args *Args, httpDump *HTTPDump, err error) {
-	defaultConfigP, err := getDefaultConfigFile()
+func parseArgs() (args *Args, dumpConfig *DumpConfig, err error) {
+	configPath, err := getDefaultConfigFile()
+	if err != nil {
+		exitWithError(err)
+	}
+	arguments, err := docopt.Parse(usage, nil, true, fmt.Sprintf("gdhttp %s", version), false)
 	if err != nil {
 		exitWithError(err)
 	}
 
-	verbose := flag.Bool("v", false, "Verbose output. Print the whole request as well as the response.")
-	onlyBody := flag.Bool("b", false, "Print only the response body.")
-	accessKeyID := flag.String("accessKeyID", "", "Access key id.")
-	accessKeySecret := flag.String("accessKeySecret", "", "Access key secret.")
-	timeout := flag.Int64("timeout", 30, "The connection timeout of the request in seconds.")
-	configP := flag.String("c", defaultConfigP, "Configuration file")
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr,
-			`Usage: %s [-accessKeyID ACCESSKEYID] [-accessKeySecret ACCESSKEYSECRET]
-              [-b] [-c CONFIGFILE] [-timeout TIMEOUT] [-v]
-              [METHOD] URL
-`, os.Args[0])
-		flag.PrintDefaults()
-	}
-	flag.Parse()
-
-	method := http.MethodGet
-	uri := ""
+	configPath = getArgString(arguments, "--config", configPath)
+	accessKeyID := getArgString(arguments, "--accesskeyid", "")
+	accessKeySecret := getArgString(arguments, "--accesskeysecret", "")
+	verbose := getArgBoolean(arguments, "--verbose", false)
+	onlyBody := getArgBoolean(arguments, "--body", false)
+	timeout := getArgSecond(arguments, "--timeout", defaultTimeout)
+	method := getArgString(arguments, "METHOD", http.MethodGet)
+	uri := getArgString(arguments, "URL", "")
 	params := []byte{}
-	cmdArgs := flag.Args()
-	if len(cmdArgs) == 1 {
-		uri = cmdArgs[0]
-	} else if len(cmdArgs) == 2 {
-		method = strings.ToUpper(cmdArgs[0])
-		uri = cmdArgs[1]
-	}
-	if uri == "" {
-		flag.Usage()
-		os.Exit(1)
-	}
-
 	if !isatty.IsTerminal(os.Stdin.Fd()) {
 		if params, err = ioutil.ReadAll(os.Stdin); err != nil {
 			exitWithError(err)
@@ -171,7 +188,7 @@ func parseArgs() (args *Args, httpDump *HTTPDump, err error) {
 	}
 
 	auths := map[string]configAuth{}
-	config, err := parseConfig(*configP)
+	config, err := parseConfig(string(configPath))
 	if err != nil {
 		exitWithError(err)
 	} else {
@@ -180,37 +197,37 @@ func parseArgs() (args *Args, httpDump *HTTPDump, err error) {
 			exitWithError(err)
 		}
 		if value, ok := config.Auths[u.Host]; ok {
-			accessKeyID = &value.AccessKeyID
-			accessKeySecret = &value.AccessKeySecret
+			accessKeyID = value.AccessKeyID
+			accessKeySecret = value.AccessKeySecret
 		}
 	}
 	auths = config.Auths
 
 	args = &Args{
-		accessKeyID:     *accessKeyID,
-		accessKeySecret: *accessKeySecret,
+		accessKeyID:     accessKeyID,
+		accessKeySecret: accessKeySecret,
 		auths:           auths,
-		timeout:         time.Duration(*timeout) * time.Second,
+		timeout:         timeout,
 		method:          method,
 		uri:             uri,
 		params:          params,
 	}
-	httpDump = &HTTPDump{
-		verbose:  *verbose,
-		onlyBody: *onlyBody,
+	dumpConfig = &DumpConfig{
+		verbose:  verbose,
+		onlyBody: onlyBody,
 	}
 	return
 }
 
 func main() {
-	args, httpDump, err := parseArgs()
+	args, dumpConfig, err := parseArgs()
 	if err != nil {
 		exitWithError(err)
 	}
 	c := NewClient(args.accessKeyID, args.accessKeySecret, args.timeout)
 
 	resp, err := c.doRequest(
-		args.method, args.uri, args.params, httpDump,
+		args.method, args.uri, args.params, dumpConfig,
 	)
 	if err != nil {
 		exitWithError(err)
@@ -218,20 +235,25 @@ func main() {
 	defer resp.Body.Close()
 }
 
-func (dump *HTTPDump) before(req *http.Request) {
+func (dump *DumpConfig) before(req *http.Request) {
 	if dump.verbose {
 		b, _ := httputil.DumpRequest(req, true)
-		fmt.Print(string(b))
+		fmt.Println(string(b))
+		fmt.Println("")
 	}
 }
 
-func (dump *HTTPDump) after(resp *http.Response) {
+func (dump *DumpConfig) after(resp *http.Response) {
 	if !dump.onlyBody {
 		b, _ := httputil.DumpResponse(resp, false)
 		fmt.Print(string(b))
 	}
-	jsonBody, _ := ioutil.ReadAll(resp.Body)
-	prettyBody, _ := prettyJSON(jsonBody)
+	body, _ := ioutil.ReadAll(resp.Body)
+	prettyBody, err := prettyJSON(body)
+	if err != nil {
+		fmt.Println(string(body))
+		return
+	}
 	fmt.Println(string(prettyBody))
 }
 
@@ -252,6 +274,38 @@ func getDefaultConfigFile() (p string, err error) {
 		return
 	}
 
-	p = path.Join(usr.HomeDir, configPath)
+	p = path.Join(usr.HomeDir, defaultConfigPath)
 	return
+}
+
+func getMapValue(m map[string]interface{}, key string, defaultValue interface{}) interface{} {
+	if value, ok := m[key]; ok && value != nil {
+		return value
+	}
+	return defaultValue
+}
+
+func getArgSecond(m map[string]interface{}, key string, defaultValue interface{}) time.Duration {
+	v := time.Nanosecond
+	if value := getMapValue(m, key, defaultValue); value != nil {
+		v, _ = value.(time.Duration)
+		v = v * time.Second
+	}
+	return v
+}
+
+func getArgString(m map[string]interface{}, key string, defaultValue interface{}) string {
+	v := ""
+	if value := getMapValue(m, key, defaultValue); value != nil {
+		v, _ = value.(string)
+	}
+	return v
+}
+
+func getArgBoolean(m map[string]interface{}, key string, defaultValue interface{}) bool {
+	v := false
+	if value := getMapValue(m, key, defaultValue); value != nil {
+		v, _ = value.(bool)
+	}
+	return v
 }
