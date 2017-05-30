@@ -12,6 +12,8 @@ import (
 	"os"
 	"os/user"
 	"path"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -69,6 +71,8 @@ Sample configuration file:
     }
 }
 `
+
+var reJSONUnicode = regexp.MustCompile("\\\\u[a-z\\d]{4}")
 
 // Client ...
 type Client struct {
@@ -266,13 +270,21 @@ func (dump *DumpConfig) after(resp *http.Response) {
 		b, _ := httputil.DumpResponse(resp, false)
 		fmt.Print(string(b))
 	}
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println(string(body))
+		return
+	}
+
 	prettyBody, err := prettyJSON(body)
 	if err != nil {
 		fmt.Println(string(body))
 		return
 	}
-	fmt.Println(string(prettyBody))
+
+	bodyStr := string(prettyBody)
+	bodyStr = replaceJSONUnicode(bodyStr)
+	fmt.Println(bodyStr)
 }
 
 func prettyJSON(b []byte) ([]byte, error) {
@@ -326,4 +338,16 @@ func getArgBoolean(m map[string]interface{}, key string, defaultValue interface{
 		v, _ = value.(bool)
 	}
 	return v
+}
+
+// \\uXXXX -> \uXXXX 方便显示 json 中的中文
+func replaceJSONUnicode(s string) string {
+	s = reJSONUnicode.ReplaceAllStringFunc(s, func(m string) string {
+		hexS := strings.TrimLeft(m, "\\\\u")
+		if r, err := strconv.ParseInt(hexS, 16, 16); err == nil {
+			return string(rune(r))
+		}
+		return m
+	})
+	return s
 }
