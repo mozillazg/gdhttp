@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/user"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/docopt/docopt-go"
@@ -20,9 +21,17 @@ import (
 )
 
 const version = "0.1.0"
-const defaultContentTypeJSON = "application/json; charset=utf-8"
-const userAgent = "gdhttp/" + version
 const defaultConfigPath = ".gdhttp/config.json"
+
+var defaultHeaders = map[string]string{
+	"Content-Type":    "application/json",
+	"User-Agent":      "gdhttp/" + version,
+	"Accept":          "application/json",
+	"Accept-Encoding": "application/json",
+	"Connection":      "keep-alive",
+	// "Content-Length":  "0",
+}
+
 const defaultTimeout = 30 * time.Second
 const usage = `gdhttp.
 
@@ -47,6 +56,7 @@ options:
     -t, --timeout=<timeout>              The connection timeout of the request in seconds (default: 30).
     -b, --body                           Print only the response body.
     -v, --verbose                        Verbose output. Print the whole request as well as the response.
+    --no-auth                            Don't add Authorization header.
 
 Sample configuration file:
 
@@ -91,7 +101,7 @@ func NewClient(accessKeyID, accessKeySecret string, timeout time.Duration) *Clie
 	}
 }
 
-func (c *Client) doRequest(method, uri string, params []byte, hook Hook) (resp *http.Response, err error) {
+func (c *Client) doRequest(method, uri string, params []byte, noAuth bool, hook Hook) (resp *http.Response, err error) {
 	u := &url.URL{}
 	if u, err = url.Parse(uri); err != nil {
 		return
@@ -112,14 +122,17 @@ func (c *Client) doRequest(method, uri string, params []byte, hook Hook) (resp *
 	if err != nil {
 		return
 	}
-	req.Header.Set("Content-Type", defaultContentTypeJSON)
-	req.Header.Set("User-Agent", userAgent)
-	sign := gdauth.Signature{
-		Method:          gdauth.HMACSHA1V1,
-		AccessKeyID:     c.accessKeyID,
-		AccessKeySecret: c.accessKeySecret,
+	for key, value := range defaultHeaders {
+		req.Header.Set(key, value)
 	}
-	sign.SignReq(req)
+	if !noAuth {
+		sign := gdauth.Signature{
+			Method:          gdauth.HMACSHA1V1,
+			AccessKeyID:     c.accessKeyID,
+			AccessKeySecret: c.accessKeySecret,
+		}
+		sign.SignReq(req)
+	}
 
 	hook.before(req)
 
@@ -160,6 +173,7 @@ type Args struct {
 	method          string
 	uri             string
 	params          []byte
+	noAuth          bool
 }
 
 func parseArgs() (args *Args, dumpConfig *DumpConfig, err error) {
@@ -172,13 +186,14 @@ func parseArgs() (args *Args, dumpConfig *DumpConfig, err error) {
 		exitWithError(err)
 	}
 
+	noAuth := getArgBoolean(arguments, "--no-auth", false)
 	configPath = getArgString(arguments, "--config", configPath)
 	accessKeyID := getArgString(arguments, "--accesskeyid", "")
 	accessKeySecret := getArgString(arguments, "--accesskeysecret", "")
 	verbose := getArgBoolean(arguments, "--verbose", false)
 	onlyBody := getArgBoolean(arguments, "--body", false)
 	timeout := getArgSecond(arguments, "--timeout", defaultTimeout)
-	method := getArgString(arguments, "METHOD", http.MethodGet)
+	method := strings.ToUpper(getArgString(arguments, "METHOD", http.MethodGet))
 	uri := getArgString(arguments, "URL", "")
 	params := []byte{}
 	if !isatty.IsTerminal(os.Stdin.Fd()) {
@@ -188,20 +203,22 @@ func parseArgs() (args *Args, dumpConfig *DumpConfig, err error) {
 	}
 
 	auths := map[string]configAuth{}
-	config, err := parseConfig(string(configPath))
-	if err != nil {
-		exitWithError(err)
-	} else {
-		u, err := url.Parse(uri)
+	if !noAuth {
+		config, err := parseConfig(string(configPath))
 		if err != nil {
 			exitWithError(err)
+		} else {
+			u, err := url.Parse(uri)
+			if err != nil {
+				exitWithError(err)
+			}
+			if value, ok := config.Auths[u.Host]; ok {
+				accessKeyID = value.AccessKeyID
+				accessKeySecret = value.AccessKeySecret
+			}
 		}
-		if value, ok := config.Auths[u.Host]; ok {
-			accessKeyID = value.AccessKeyID
-			accessKeySecret = value.AccessKeySecret
-		}
+		auths = config.Auths
 	}
-	auths = config.Auths
 
 	args = &Args{
 		accessKeyID:     accessKeyID,
@@ -211,6 +228,7 @@ func parseArgs() (args *Args, dumpConfig *DumpConfig, err error) {
 		method:          method,
 		uri:             uri,
 		params:          params,
+		noAuth:          noAuth,
 	}
 	dumpConfig = &DumpConfig{
 		verbose:  verbose,
@@ -227,7 +245,7 @@ func main() {
 	c := NewClient(args.accessKeyID, args.accessKeySecret, args.timeout)
 
 	resp, err := c.doRequest(
-		args.method, args.uri, args.params, dumpConfig,
+		args.method, args.uri, args.params, args.noAuth, dumpConfig,
 	)
 	if err != nil {
 		exitWithError(err)
