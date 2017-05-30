@@ -38,18 +38,36 @@ const defaultTimeout = 30 * time.Second
 const usage = `gdhttp.
 
 Usage:
-    gdhttp URL
-    gdhttp [METHOD] URL
-    gdhttp [options] URL
-    gdhttp [options] [METHOD] URL
-    gdhttp -h | --help
-    gdhttp -V | --version
+    gdhttp [-h | --help] [-V | --version]
+           [--accesskeyid=<accessKeyID>]
+           [--accesskeysecret=<accessKeySecret>]
+           [--config=<config>]
+           [--body] [--no-auth] [--verbose]
+           [METHOD] URL [REQUEST_ITEM...]
 
 Arguments:
-    METHOD                               HTTP method (default: GET).
-    URL                                  URL.
 
-options:
+    METHOD
+      The HTTP method to be used for the request (GET, POST, PUT, DELETE, ...) (default: GET).
+
+    URL
+      The scheme defaults to 'http://' if the URL does not include one.
+      (You can override this with: --default-scheme=https)
+
+      You can also use a shorthand for localhost
+
+          $ http :3000                    # => http://localhost:3000
+          $ http :/foo                    # => http://localhost/foo
+
+    REQUEST_ITEM
+      Optional key-value pairs to be included in the request. The separator used
+      determines the type:
+
+      '==' URL parameters to be appended to the request URI:
+
+          search==httpie
+
+Options:
     -h --help                            Show this screen.
     -V, --version                        Show version info.
     --accesskeyid=<accessKeyID>          Access key id.
@@ -189,6 +207,7 @@ func parseArgs() (args *Args, dumpConfig *DumpConfig, err error) {
 	if err != nil {
 		exitWithError(err)
 	}
+	fmt.Println(arguments)
 
 	noAuth := getArgBoolean(arguments, "--no-auth", false)
 	configPath = getArgString(arguments, "--config", configPath)
