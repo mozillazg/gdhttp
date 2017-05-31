@@ -52,7 +52,6 @@ Arguments:
 
     URL
       The scheme defaults to 'http://' if the URL does not include one.
-      (You can override this with: --default-scheme=https)
 
       You can also use a shorthand for localhost
 
@@ -91,6 +90,8 @@ Sample configuration file:
 `
 
 var reJSONUnicode = regexp.MustCompile("\\\\u[a-z\\d]{4}")
+var reQueryItem = regexp.MustCompile("^([^=]+)==([^\\s]*)$")
+const queryItemFlag = "=="
 
 // Client ...
 type Client struct {
@@ -123,12 +124,7 @@ func NewClient(accessKeyID, accessKeySecret string, timeout time.Duration) *Clie
 	}
 }
 
-func (c *Client) doRequest(method, uri string, params []byte, noAuth bool, hook Hook) (resp *http.Response, err error) {
-	u := &url.URL{}
-	if u, err = url.Parse(uri); err != nil {
-		return
-	}
-
+func (c *Client) doRequest(method string, uri *url.URL, params []byte, noAuth bool, hook Hook) (resp *http.Response, err error) {
 	var body io.Reader
 	if params != nil && len(params) > 0 {
 		switch method {
@@ -140,7 +136,7 @@ func (c *Client) doRequest(method, uri string, params []byte, noAuth bool, hook 
 			body = bytes.NewReader(params)
 		}
 	}
-	req, err := http.NewRequest(method, u.String(), body)
+	req, err := http.NewRequest(method, uri.String(), body)
 	if err != nil {
 		return
 	}
@@ -196,6 +192,7 @@ type Args struct {
 	uri             string
 	params          []byte
 	noAuth          bool
+	requestItems	[]string
 }
 
 func parseArgs() (args *Args, dumpConfig *DumpConfig, err error) {
@@ -218,10 +215,20 @@ func parseArgs() (args *Args, dumpConfig *DumpConfig, err error) {
 	timeout := getArgSecond(arguments, "--timeout", defaultTimeout)
 	method := strings.ToUpper(getArgString(arguments, "METHOD", http.MethodGet))
 	uri := getArgString(arguments, "URL", "")
+	requestItems := getArgStringArray(arguments, "REQUEST_ITEM", []string{})
 	params := []byte{}
 	if !isatty.IsTerminal(os.Stdin.Fd()) {
 		if params, err = ioutil.ReadAll(os.Stdin); err != nil {
 			exitWithError(err)
+		}
+	}
+	if !isValidMethod(method) {
+		uri = method
+		method = http.MethodGet
+		oldRequestItems := requestItems[:]
+		requestItems = []string{}
+		for _, item := range(oldRequestItems) {
+			requestItems = append(requestItems, item)
 		}
 	}
 
@@ -252,6 +259,7 @@ func parseArgs() (args *Args, dumpConfig *DumpConfig, err error) {
 		uri:             uri,
 		params:          params,
 		noAuth:          noAuth,
+		requestItems:	requestItems,
 	}
 	dumpConfig = &DumpConfig{
 		verbose:  verbose,
@@ -265,10 +273,15 @@ func main() {
 	if err != nil {
 		exitWithError(err)
 	}
+	uri, err := buildURL(args.uri, args.requestItems)
+	if err != nil {
+		exitWithError(err)
+	}
+
 	c := NewClient(args.accessKeyID, args.accessKeySecret, args.timeout)
 
 	resp, err := c.doRequest(
-		args.method, args.uri, args.params, args.noAuth, dumpConfig,
+		args.method, uri, args.params, args.noAuth, dumpConfig,
 	)
 	if err != nil {
 		exitWithError(err)
@@ -359,6 +372,14 @@ func getArgBoolean(m map[string]interface{}, key string, defaultValue interface{
 	return v
 }
 
+func getArgStringArray(m map[string]interface{}, key string, defaultValue interface{}) []string {
+	v := []string{}
+	if value := getMapValue(m, key, defaultValue); value != nil {
+		v, _ = value.([]string)
+	}
+	return v
+}
+
 // \\uXXXX -> \uXXXX 方便显示 json 中的中文
 func replaceJSONUnicode(s string) string {
 	s = reJSONUnicode.ReplaceAllStringFunc(s, func(m string) string {
@@ -369,4 +390,38 @@ func replaceJSONUnicode(s string) string {
 		return m
 	})
 	return s
+}
+
+
+func isValidMethod(method string) bool {
+	switch strings.ToUpper(method) {
+		case http.MethodGet:
+		case http.MethodHead:
+		case http.MethodPost:
+		case http.MethodPut:
+		case http.MethodPatch:
+		case http.MethodDelete:
+		case http.MethodOptions:
+		case http.MethodConnect:
+		case http.MethodTrace:
+			return true
+	}
+	return false
+}
+
+
+func buildURL(uri string, requestItems []string) (u *url.URL, err error) {
+	u, err = url.Parse(uri)
+	if err != nil {
+		return
+	}
+
+	queryItems := u.Query()
+	for _, item := range(requestItems) {
+		if reQueryItem.Match([]byte(item)) {
+			arr := strings.Split(item, queryItemFlag)
+			queryItems.Add(arr[0], arr[1])
+		}
+	}
+	return
 }
