@@ -91,6 +91,7 @@ Sample configuration file:
 
 var reJSONUnicode = regexp.MustCompile("\\\\u[a-z\\d]{4}")
 var reQueryItem = regexp.MustCompile("^([^=]+)==([^\\s]*)$")
+
 const queryItemFlag = "=="
 
 // Client ...
@@ -192,7 +193,7 @@ type Args struct {
 	uri             string
 	params          []byte
 	noAuth          bool
-	requestItems	[]string
+	requestItems    []string
 }
 
 func parseArgs() (args *Args, dumpConfig *DumpConfig, err error) {
@@ -227,7 +228,7 @@ func parseArgs() (args *Args, dumpConfig *DumpConfig, err error) {
 		method = http.MethodGet
 		oldRequestItems := requestItems[:]
 		requestItems = []string{}
-		for _, item := range(oldRequestItems) {
+		for _, item := range oldRequestItems {
 			requestItems = append(requestItems, item)
 		}
 	}
@@ -259,7 +260,7 @@ func parseArgs() (args *Args, dumpConfig *DumpConfig, err error) {
 		uri:             uri,
 		params:          params,
 		noAuth:          noAuth,
-		requestItems:	requestItems,
+		requestItems:    requestItems,
 	}
 	dumpConfig = &DumpConfig{
 		verbose:  verbose,
@@ -392,23 +393,21 @@ func replaceJSONUnicode(s string) string {
 	return s
 }
 
-
 func isValidMethod(method string) bool {
 	switch strings.ToUpper(method) {
-		case http.MethodGet:
-		case http.MethodHead:
-		case http.MethodPost:
-		case http.MethodPut:
-		case http.MethodPatch:
-		case http.MethodDelete:
-		case http.MethodOptions:
-		case http.MethodConnect:
-		case http.MethodTrace:
-			return true
+	case http.MethodGet:
+	case http.MethodHead:
+	case http.MethodPost:
+	case http.MethodPut:
+	case http.MethodPatch:
+	case http.MethodDelete:
+	case http.MethodOptions:
+	case http.MethodConnect:
+	case http.MethodTrace:
+		return true
 	}
 	return false
 }
-
 
 func buildURL(uri string, requestItems []string) (u *url.URL, err error) {
 	u, err = url.Parse(uri)
@@ -417,7 +416,7 @@ func buildURL(uri string, requestItems []string) (u *url.URL, err error) {
 	}
 
 	queryItems := u.Query()
-	for _, item := range(requestItems) {
+	for _, item := range requestItems {
 		if reQueryItem.Match([]byte(item)) {
 			arr := strings.Split(item, queryItemFlag)
 			queryItems.Add(arr[0], arr[1])

@@ -1,0 +1,16 @@
+hash: a8d1d4c77b33d3daaf5a9ec50e2b06508df198a297d133c6ff844f8322f9dd54
+updated: 2017-06-01T21:24:44.226880518+08:00
+imports:
+- name: github.com/docopt/docopt-go
+  version: 784ddc588536785e7299f7272f39101f7faccc3f
+- name: github.com/mattn/go-isatty
+  version: fc9e8d8ef48496124e79ae0df75490096eccf6fe
+- name: github.com/spf13/cobra
+  version: 8d4ce3549a0bf0e3569df3aae7423b7743cd05a9
+  subpackages:
+  - cobra
+- name: golang.org/x/sys
+  version: b90f89a1e7a9c1f6b918820b3daa7f08488c8594
+  subpackages:
+  - unix
+testImports: []
