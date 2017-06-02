@@ -1,4 +1,4 @@
-// Copyright Â© 2017 mozillazg
+// Copyright © 2017 mozillazg
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -118,7 +118,7 @@ func Execute() {
 }
 
 func init() {
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.gdhttp.json)")
+	RootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/.gdhttp.json)")
 	RootCmd.PersistentFlags().StringVar(&accessKeyID, "access-key-id", "", "Access key ID")
 	RootCmd.PersistentFlags().StringVar(&accessKeySecret, "access-key-secret", "", "Access key secret")
 	RootCmd.PersistentFlags().BoolVarP(&onlyBody, "body", "b", false, "Print only the response body")
