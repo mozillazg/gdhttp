@@ -1,14 +1,14 @@
 # gdhttp
 
-[![Build Status](https://travis-ci.org/mozillazg/gdhttp.svg?branch=master)](https://travis-ci.org/mozillazg/gdhttp)
-[![Go Report Card](https://goreportcard.com/badge/github.com/mozillazg/gdhttp)](https://goreportcard.com/report/github.com/mozillazg/gdhttp)
+[![Build Status](https://circleci.com/bb/mozillazg/gdhttp/tree/master.svg?style=svg)](https://circleci.com/bb/mozillazg/gdhttp/tree/master)
+[![Go Report Card](https://goreportcard.com/badge/bitbucket.org/mozillazg/gdhttp)](https://goreportcard.com/report/bitbucket.org/mozillazg/gdhttp)
 
 ## install
 
-`go get -u github.com/mozillazg/gdhttp`
+`go get -u bitbucket.org/mozillazg/gdhttp`
 
 
-or download from [release](https://github.com/mozillazg/gdhttp/releases).
+or download from [release](https://bitbucket.org/mozillazg/gdauth/downloads/).
 
 
 ## usage

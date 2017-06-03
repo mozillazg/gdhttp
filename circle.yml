@@ -1,0 +1,27 @@
+machine:
+  environment:
+    PROJECT_GOPATH: "${HOME}/.go_project"
+    PROJECT_PARENT_PATH: "${PROJECT_GOPATH}/src/bitbucket.org/${CIRCLE_PROJECT_USERNAME}"
+    PROJECT_PATH: "${PROJECT_PARENT_PATH}/${CIRCLE_PROJECT_REPONAME}"
+    GOPATH: "${HOME}/.go_workspace:/usr/local/go_workspace:${PROJECT_GOPATH}"
+    PATH: "${GOPATH}/bin:${PATH}"
+
+dependencies:
+  pre:
+    - mkdir -p "${GOPATH}/bin"
+    - mkdir -p "${PROJECT_PARENT_PATH}"
+    - |
+      wget https://github.com/Masterminds/glide/releases/download/v0.12.3/glide-v0.12.3-linux-amd64.tar.gz && \
+      tar zxvf glide-v0.12.3-linux-amd64.tar.gz && \
+      chmod +x linux-amd64/glide && \
+      mv linux-amd64/glide "${GOPATH}/bin"
+    - if ! go get code.google.com/p/go.tools/cmd/cover; then go get golang.org/x/tools/cmd/cover; fi
+    - go get github.com/axw/gocov/gocov
+    - go get github.com/mattn/goveralls
+  override:
+    - mkdir -p "${PROJECT_PARENT_PATH}"
+    - rsync -avC "${HOME}/${CIRCLE_PROJECT_REPONAME}/" "${PROJECT_PATH}"
+
+test:
+  override:
+    - go test $(glide novendor)
