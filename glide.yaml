@@ -1,4 +1,4 @@
-package: github.com/mozillazg/gdhttp
+package: bitbucket.org/mozillazg/gdhttp
 import:
 - package: bitbucket.org/mozillazg/gdauth
   version: v0.1.0

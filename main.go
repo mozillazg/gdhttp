@@ -20,7 +20,7 @@
 
 package main
 
-import "github.com/mozillazg/gdhttp/cmd"
+import "bitbucket.org/mozillazg/gdhttp/cmd"
 
 func main() {
 	cmd.Execute()
