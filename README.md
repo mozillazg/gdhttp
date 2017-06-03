@@ -8,7 +8,7 @@
 `go get -u bitbucket.org/mozillazg/gdhttp`
 
 
-or download from [release](https://bitbucket.org/mozillazg/gdauth/downloads/).
+or download from [release](https://bitbucket.org/mozillazg/gdhttp/downloads/).
 
 
 ## usage
