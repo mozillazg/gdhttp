@@ -31,7 +31,7 @@ release-all:
 	@$(MAKE) release GOOS=windows GOARCH=386   SUFFIX_EXE=.exe
 	@$(MAKE) release GOOS=linux   GOARCH=amd64
 	@$(MAKE) release GOOS=linux   GOARCH=386
-@$(MAKE) release GOOS=darwin GOARCH=amd64
+	@$(MAKE) release GOOS=darwin  GOARCH=amd64
 
 .PHONY: lint
 lint:
