@@ -35,9 +35,9 @@ import (
 )
 
 var reJSONUnicode = regexp.MustCompile("\\\\u[a-z\\d]{4}")
-var reQueryItem = regexp.MustCompile("^([^=]+)==([^\\s]*)$")
+var reQueryItem = regexp.MustCompile("^([^=]+)=(.*)$")
 
-const queryItemFlag = "=="
+const queryItemFlag = "="
 
 type PositionalArgument struct {
 	httpMethod   string

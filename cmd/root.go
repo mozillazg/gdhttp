@@ -313,9 +313,9 @@ Positional Arguments:
       Optional key-value pairs to be included in the request. The separator used
       determines the type:
 
-      '==' URL parameters to be appended to the request URI:
+      '=' URL parameters to be appended to the request URI:
 
-          search==httpie
+          search=httpie
 
 Optional Arguments:
     --help, -h
