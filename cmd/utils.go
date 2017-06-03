@@ -23,7 +23,6 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	homedir "github.com/mitchellh/go-homedir"
 	"net/http"
 	"net/url"
 	"os"
@@ -31,6 +30,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	homedir "github.com/mitchellh/go-homedir"
 )
 
 var reJSONUnicode = regexp.MustCompile("\\\\u[a-z\\d]{4}")
@@ -83,7 +84,7 @@ func parsePositionalArguments(args []string) (p PositionalArgument, err error) {
 func replaceJSONUnicode(s string) string {
 	s = reJSONUnicode.ReplaceAllStringFunc(s, func(m string) string {
 		hexS := strings.TrimLeft(m, "\\\\u")
-		if r, err := strconv.ParseInt(hexS, 16, 16); err == nil {
+		if r, err := strconv.ParseInt(hexS, 16, 64); err == nil {
 			return string(rune(r))
 		}
 		return m
