@@ -1,7 +1,8 @@
 package: github.com/mozillazg/gdhttp
 import:
-- package: github.com/docopt/docopt-go
+- package: bitbucket.org/mozillazg/gdauth
+  version: v0.1.0
 - package: github.com/mattn/go-isatty
+  version: v0.0.2
+- package: github.com/mitchellh/go-homedir
 - package: github.com/spf13/cobra
-  subpackages:
-  - cobra

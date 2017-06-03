@@ -1,14 +1,18 @@
-hash: a8d1d4c77b33d3daaf5a9ec50e2b06508df198a297d133c6ff844f8322f9dd54
-updated: 2017-06-01T21:24:44.226880518+08:00
+hash: 689a69805fe03b16f04f20af99d834a95d4719476c4005840f931fa93d3d0ec0
+updated: 2017-06-03T17:17:35.757673064+08:00
 imports:
-- name: github.com/docopt/docopt-go
-  version: 784ddc588536785e7299f7272f39101f7faccc3f
+- name: bitbucket.org/mozillazg/gdauth
+  version: 4c489af3333b6381b9225996bb612bc97bc480a1
+- name: github.com/inconshreveable/mousetrap
+  version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
 - name: github.com/mattn/go-isatty
   version: fc9e8d8ef48496124e79ae0df75490096eccf6fe
+- name: github.com/mitchellh/go-homedir
+  version: b8bc1bf767474819792c23f32d8286a45736f1c6
 - name: github.com/spf13/cobra
   version: 8d4ce3549a0bf0e3569df3aae7423b7743cd05a9
-  subpackages:
-  - cobra
+- name: github.com/spf13/pflag
+  version: e57e3eeb33f795204c1ca35f56c44f83227c6e66
 - name: golang.org/x/sys
   version: b90f89a1e7a9c1f6b918820b3daa7f08488c8594
   subpackages:

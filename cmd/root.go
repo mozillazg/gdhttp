@@ -1,4 +1,4 @@
-// Copyright © 2017 mozillazg
+// Copyright Â© 2017 mozillazg
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,22 +21,21 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
-
 	"bytes"
 	"encoding/json"
-	"github.com/mozillazg/gdauth"
-	"github.com/spf13/cobra"
+	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
-	"net/url"
-	"time"
-	//"github.com/mattn/go-isatty"
-	"errors"
-	"github.com/mattn/go-isatty"
 	"net/http/httputil"
+	"net/url"
+	"os"
+	"time"
+
+	"bitbucket.org/mozillazg/gdauth"
+	"github.com/mattn/go-isatty"
+	"github.com/spf13/cobra"
 )
 
 const version = "0.1.0"
