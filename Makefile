@@ -4,7 +4,7 @@ help:
 	@echo "release-all        compile for all platforms "
 
 PROJECT=gdhttp
-VERSION=$(shell cat main.go |grep 'version = "[0-9]\+.[0-9]\+.[0-9]\+"' | awk -F '"' '{print $$2}')
+VERSION=$(shell cat cmd/root.go |grep 'version = "[0-9]\+.[0-9]\+.[0-9]\+"' | awk -F '"' '{print $$2}')
 
 GOVERSION=$(shell go version)
 GOOS=$(word 1,$(subst /, ,$(lastword $(GOVERSION))))
