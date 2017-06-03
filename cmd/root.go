@@ -40,6 +40,8 @@ import (
 
 const version = "0.1.0"
 const defaultConfigPath = "$HOME/.gdhttp.json"
+const defaultScheme = "http"
+const defaultHost = "localhost"
 
 var defaultHeaders = map[string]string{
 	"Content-Type":    "application/json",
