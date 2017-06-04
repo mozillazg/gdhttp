@@ -308,8 +308,8 @@ Positional Arguments:
 
       You can also use a shorthand for localhost
 
-          $ http :3000                    # => http://localhost:3000
-          $ http :/foo                    # => http://localhost/foo
+          $ gdhttp :3000                    # => http://localhost:3000
+          $ gdhttp :/foo                    # => http://localhost/foo
 
     REQUEST_ITEM
       Optional key-value pairs to be included in the request. The separator used
@@ -317,7 +317,12 @@ Positional Arguments:
 
       '=' URL parameters to be appended to the request URI:
 
-          search=httpie
+          $ gdhttp :/foo search=httpie     # => http://localhost/foo?search=httpie
+
+      '==' Parameters to be formating the request URI:
+
+          $ gdhttp :/<id> id==123           # => http://localhost/123
+
 
 Optional Arguments:
     --help, -h

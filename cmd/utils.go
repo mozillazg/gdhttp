@@ -35,11 +35,13 @@ import (
 )
 
 var reJSONUnicode = regexp.MustCompile("\\\\u[a-z\\d]{4}")
-var reQueryItem = regexp.MustCompile("^([^=]+)=(.*)$")
+var reQueryItem = regexp.MustCompile("^([^=]+)=($|[^=](.*)$)")
 var reURLOnlyPort = regexp.MustCompile("^:\\d+")
 var reURLHasScheme = regexp.MustCompile("^https?://")
+var reURLFormat = regexp.MustCompile("^([^=]+)==(.*)$")
 
 const queryItemFlag = "="
+const formatItemFlag = "=="
 
 type PositionalArgument struct {
 	httpMethod   string
@@ -111,18 +113,7 @@ func isValidMethod(method string) bool {
 }
 
 func buildURL(uri string, requestItems []string) (u *url.URL, err error) {
-	// :/xxx -> 127.0.0.1/xxx
-	if strings.HasPrefix(uri, ":") {
-		uri = fmt.Sprintf("%s%s", defaultHost, strings.TrimLeft(uri, ":"))
-	}
-	// :8000/xxx -> 127.0.0.1:8000/xxx
-	if reURLOnlyPort.Match([]byte(uri)) {
-		uri = fmt.Sprintf("%s%s", defaultHost, uri)
-	}
-	// example.com/xxx -> http://example.com/xxx
-	if !reURLHasScheme.Match([]byte(uri)) {
-		uri = fmt.Sprintf("%s://%s", defaultScheme, uri)
-	}
+	uri = fillURL(uri, requestItems)
 
 	u, err = url.Parse(uri)
 	if err != nil {
@@ -166,4 +157,30 @@ func absPathify(inPath string) (string, error) {
 	}
 
 	return inPath, nil
+}
+
+func fillURL(uri string, requestItems []string) string {
+	// :/xxx -> 127.0.0.1/xxx
+	if strings.HasPrefix(uri, ":") {
+		uri = fmt.Sprintf("%s%s", defaultHost, strings.TrimLeft(uri, ":"))
+	}
+	// :8000/xxx -> 127.0.0.1:8000/xxx
+	if reURLOnlyPort.Match([]byte(uri)) {
+		uri = fmt.Sprintf("%s%s", defaultHost, uri)
+	}
+	// example.com/xxx -> http://example.com/xxx
+	if !reURLHasScheme.Match([]byte(uri)) {
+		uri = fmt.Sprintf("%s://%s", defaultScheme, uri)
+	}
+	// /<id> id==123  ->  /123
+	formatMapping := map[string]interface{}{}
+	for _, item := range requestItems {
+		if reURLFormat.Match([]byte(item)) {
+			arr := strings.Split(item, formatItemFlag)
+			formatMapping[arr[0]] = arr[1]
+		}
+	}
+	uri = substitute(uri, formatMapping)
+
+	return uri
 }
