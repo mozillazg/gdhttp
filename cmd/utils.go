@@ -160,13 +160,13 @@ func absPathify(inPath string) (string, error) {
 }
 
 func fillURL(uri string, requestItems []string) string {
-	// :/xxx -> 127.0.0.1/xxx
-	if strings.HasPrefix(uri, ":") {
-		uri = fmt.Sprintf("%s%s", defaultHost, strings.TrimLeft(uri, ":"))
-	}
 	// :8000/xxx -> 127.0.0.1:8000/xxx
 	if reURLOnlyPort.Match([]byte(uri)) {
 		uri = fmt.Sprintf("%s%s", defaultHost, uri)
+	}
+	// :/xxx -> 127.0.0.1/xxx
+	if strings.HasPrefix(uri, ":") {
+		uri = fmt.Sprintf("%s%s", defaultHost, strings.TrimLeft(uri, ":"))
 	}
 	// example.com/xxx -> http://example.com/xxx
 	if !reURLHasScheme.Match([]byte(uri)) {
