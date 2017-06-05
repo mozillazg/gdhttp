@@ -38,7 +38,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const version = "0.4.0"
+const version = "0.5.0"
 const defaultConfigPath = "$HOME/.gdhttp.json"
 const defaultScheme = "http"
 const defaultHost = "localhost"
