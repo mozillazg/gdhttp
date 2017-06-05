@@ -119,6 +119,9 @@ func buildURL(uri string, requestItems []string) (u *url.URL, err error) {
 	if err != nil {
 		return
 	}
+	if u.Host == "" {
+		u.Host = defaultHost
+	}
 
 	queryItems := u.Query()
 	for _, item := range requestItems {

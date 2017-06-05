@@ -310,6 +310,7 @@ Positional Arguments:
 
           $ gdhttp :3000                    # => http://localhost:3000
           $ gdhttp :/foo                    # => http://localhost/foo
+          $ gdhttp /foo                    # => http://localhost/foo
 
     REQUEST_ITEM
       Optional key-value pairs to be included in the request. The separator used
