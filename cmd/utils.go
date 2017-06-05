@@ -177,7 +177,7 @@ func fillURL(uri string, requestItems []string) string {
 	for _, item := range requestItems {
 		if reURLFormat.Match([]byte(item)) {
 			arr := strings.Split(item, formatItemFlag)
-			formatMapping[arr[0]] = arr[1]
+			formatMapping[arr[0]] = url.PathEscape(arr[1])
 		}
 	}
 	uri = substitute(uri, formatMapping)
